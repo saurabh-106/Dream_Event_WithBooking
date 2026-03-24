@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login | Subh Event</title>
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <div class="logo" style="cursor: pointer;" onclick="window.location.href='index.html'">Subh <span>Event</span></div>
+      <p>Welcome back! Log in to manage your dream events.</p>
+      <ul class="features">
+        <li>Plan weddings & celebrations</li>
+        <li>Book top vendors & venues</li>
+        <li>Track your event progress</li>
+        <li>Get personalized services</li>
+      </ul>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+      <a href="index.html" class="back-home">← Back to Home</a>
+      <h2>Welcome Back 👋</h2>
+      <p class="sub">Sign in to your Subh Event account</p>
+
+      <div class="alert" id="alertMsg"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" />
+          <span class="field-error" id="emailError">Please enter a valid email</span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" />
+            <span class="toggle-password" onclick="togglePass('password', this)">👁</span>
+          </div>
+          <span class="field-error" id="passwordError">Password is required</span>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">Sign In</button>
+      </form>
+
+      <div class="auth-link">
+        Don't have an account? <a href="signup.html">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:5001/api';
+
+    function togglePass(id, el) {
+      const inp = document.getElementById(id);
+      if (inp.type === 'password') { inp.type = 'text'; el.textContent = '🙈'; }
+      else { inp.type = 'password'; el.textContent = '👁'; }
+    }
+
+    function showAlert(msg, type) {
+      const el = document.getElementById('alertMsg');
+      el.textContent = msg;
+      el.className = 'alert show ' + type;
+    }
+
+    function hideAlert() {
+      const el = document.getElementById('alertMsg');
+      el.className = 'alert';
+    }
+
+    function setError(id, errId, show) {
+      const inp = document.getElementById(id);
+      const err = document.getElementById(errId);
+      if (show) { inp.classList.add('error'); err.style.display = 'block'; }
+      else { inp.classList.remove('error'); err.style.display = 'none'; }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      let valid = true;
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError('email', 'emailError', true); valid = false;
+      } else setError('email', 'emailError', false);
+
+      if (!password) {
+        setError('password', 'passwordError', true); valid = false;
+      } else setError('password', 'passwordError', false);
+
+      if (!valid) return;
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Save token & user info
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          showAlert('✅ Login successful! Redirecting...', 'success');
+          setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+        } else {
+          showAlert('❌ ' + data.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Sign In';
+        }
+      } catch (err) {
+        showAlert('❌ Cannot connect to server. Make sure the backend is running on port 5001.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

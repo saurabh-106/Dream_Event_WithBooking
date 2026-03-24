@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up | Subh Event</title>
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <div class="logo" style="cursor: pointer;" onclick="window.location.href='index.html'">Subh <span>Event</span></div>
+      <p>Create your account and start planning your dream events today!</p>
+      <ul class="features">
+        <li>Free account, forever</li>
+        <li>Access all event services</li>
+        <li>Dedicated event manager</li>
+        <li>100+ premium vendors</li>
+      </ul>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+      <a href="index.html" class="back-home">← Back to Home</a>
+      <h2>Create Account ✨</h2>
+      <p class="sub">Join Subh Event and make memories</p>
+
+      <div class="alert" id="alertMsg"></div>
+
+      <form id="signupForm" novalidate>
+        <div class="form-group">
+          <label for="username">Full Name</label>
+          <input type="text" id="username" name="username" placeholder="Your full name" autocomplete="name" />
+          <span class="field-error" id="usernameError">Name must be at least 2 characters</span>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" />
+          <span class="field-error" id="emailError">Please enter a valid email</span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" placeholder="Min. 6 characters" autocomplete="new-password" oninput="checkStrength(this.value)" />
+            <span class="toggle-password" onclick="togglePass('password', this)">👁</span>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <span class="field-error" id="passwordError">Password must be at least 6 characters</span>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Repeat your password" autocomplete="new-password" />
+            <span class="toggle-password" onclick="togglePass('confirmPassword', this)">👁</span>
+          </div>
+          <span class="field-error" id="confirmError">Passwords do not match</span>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submitBtn">Create Account</button>
+      </form>
+
+      <div class="auth-link">
+        Already have an account? <a href="login.html">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:5001/api';
+
+    function togglePass(id, el) {
+      const inp = document.getElementById(id);
+      if (inp.type === 'password') { inp.type = 'text'; el.textContent = '🙈'; }
+      else { inp.type = 'password'; el.textContent = '👁'; }
+    }
+
+    function checkStrength(val) {
+      const fill = document.getElementById('strengthFill');
+      let score = 0;
+      if (val.length >= 6) score++;
+      if (val.length >= 10) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      const colors = ['', '#ff4757', '#ffa502', '#f7c948', '#2ed573', '#2ed573'];
+      const widths = ['0%', '20%', '40%', '60%', '80%', '100%'];
+      fill.style.width = widths[score];
+      fill.style.background = colors[score];
+    }
+
+    function showAlert(msg, type) {
+      const el = document.getElementById('alertMsg');
+      el.textContent = msg;
+      el.className = 'alert show ' + type;
+    }
+
+    function hideAlert() {
+      document.getElementById('alertMsg').className = 'alert';
+    }
+
+    function setError(id, errId, show) {
+      const inp = document.getElementById(id);
+      const err = document.getElementById(errId);
+      if (show) { inp.classList.add('error'); err.style.display = 'block'; }
+      else { inp.classList.remove('error'); err.style.display = 'none'; }
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      let valid = true;
+      if (username.length < 2) { setError('username', 'usernameError', true); valid = false; }
+      else setError('username', 'usernameError', false);
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('email', 'emailError', true); valid = false; }
+      else setError('email', 'emailError', false);
+
+      if (password.length < 6) { setError('password', 'passwordError', true); valid = false; }
+      else setError('password', 'passwordError', false);
+
+      if (password !== confirmPassword) { setError('confirmPassword', 'confirmError', true); valid = false; }
+      else setError('confirmPassword', 'confirmError', false);
+
+      if (!valid) return;
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      try {
+        const res = await fetch(`${API}/auth/signup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          showAlert('🎉 Account created successfully! Redirecting...', 'success');
+          setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+        } else {
+          showAlert('❌ ' + data.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+        }
+      } catch (err) {
+        showAlert('❌ Cannot connect to server. Make sure the backend is running on port 5001.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>

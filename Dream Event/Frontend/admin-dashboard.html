@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard | Subh Event</title>
+  <link rel="stylesheet" href="css/admin-dashboard.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="header-left">
+      <h1>Admin Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <div class="welcome-section">
+        <span>Welcome, <strong>Admin!</strong></span>
+        <div class="profile-picture">
+          <i class="fas fa-user"></i>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Summary Cards -->
+    <section class="summary-cards">
+      <div class="summary-card users-card">
+        <div class="card-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <div class="card-content">
+          <h3>Total Users</h3>
+          <p class="card-number" id="totalUsers">12,345</p>
+        </div>
+      </div>
+
+      <div class="summary-card orders-card">
+        <div class="card-icon">
+          <i class="fas fa-shopping-cart"></i>
+        </div>
+        <div class="card-content">
+          <h3>Total Orders</h3>
+          <p class="card-number" id="totalOrders">8,210</p>
+        </div>
+      </div>
+
+      <div class="summary-card sales-card">
+        <div class="card-icon">
+          <i class="fas fa-rupee-sign"></i>
+        </div>
+        <div class="card-content">
+          <h3>Total Sales</h3>
+          <p class="card-number" id="totalSales">₹25,40,000</p>
+        </div>
+      </div>
+
+      <div class="summary-card inventory-card">
+        <div class="card-icon">
+          <i class="fas fa-box"></i>
+        </div>
+        <div class="card-content">
+          <h3>Inventory Products</h3>
+          <p class="card-number" id="inventoryProducts">325</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Section -->
+    <section class="charts-section">
+      <!-- Sales Overview Chart -->
+      <div class="chart-container">
+        <div class="chart-header">
+          <h2>Sales Overview</h2>
+          <div class="chart-controls">
+            <select id="salesPeriod" onchange="updateSalesChart()">
+              <option value="jan-apr">Jan - Apr</option>
+              <option value="may-aug">May - Aug</option>
+              <option value="sep-dec">Sep - Dec</option>
+              <option value="year">Full Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="salesChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Inventory Status Chart -->
+      <div class="chart-container">
+        <div class="chart-header">
+          <h2>Inventory Status</h2>
+          <button class="refresh-btn" onclick="refreshInventoryData()">
+            <i class="fas fa-sync-alt"></i>
+            Refresh
+          </button>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="inventoryChart"></canvas>
+        </div>
+        <div class="inventory-legend">
+          <div class="legend-item">
+            <div class="legend-color in-stock"></div>
+            <span>In Stock (200)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color low-stock"></div>
+            <span>Low Stock (75)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color out-of-stock"></div>
+            <span>Out of Stock (50)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Additional Stats Section -->
+    <section class="additional-stats">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Recent Orders</h3>
+          <div class="stat-content">
+            <div class="stat-number">142</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              12% from last month
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h3>Pending Orders</h3>
+          <div class="stat-content">
+            <div class="stat-number">28</div>
+            <div class="stat-change negative">
+              <i class="fas fa-arrow-down"></i>
+              5% from last week
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h3>Conversion Rate</h3>
+          <div class="stat-content">
+            <div class="stat-number">3.2%</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              0.8% improvement
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h3>Avg. Order Value</h3>
+          <div class="stat-content">
+            <div class="stat-number">₹3,150</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              8% growth
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading dashboard data...</p>
+    </div>
+  </div>
+
+  <script>
+    // Chart instances
+    let salesChart = null;
+    let inventoryChart = null;
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAdminAuth();
+      initializeCharts();
+      loadDashboardData();
+    });
+
+    // Check admin authentication
+    function checkAdminAuth() {
+      const adminToken = localStorage.getItem('adminToken');
+      const adminUser = localStorage.getItem('adminUser');
+      
+      if (!adminToken || !adminUser) {
+        window.location.href = 'admin-login.html';
+        return;
+      }
+
+      // Update welcome message with admin name
+      const user = JSON.parse(adminUser);
+      const welcomeText = document.querySelector('.welcome-section strong');
+      if (welcomeText) {
+        welcomeText.textContent = user.username || 'Admin';
+      }
+    }
+
+    // Initialize charts
+    function initializeCharts() {
+      // Sales Overview Line Chart
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: ['January', 'February', 'March', 'April'],
+          datasets: [{
+            label: 'Sales',
+            data: [1200000, 1500000, 1800000, 2540000],
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#2563eb',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#2563eb',
+              borderWidth: 1,
+              padding: 12,
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return 'Sales: ₹' + context.parsed.y.toLocaleString('en-IN');
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              ticks: {
+                callback: function(value) {
+                  return '₹' + (value / 100000).toFixed(1) + 'L';
+                },
+                color: '#6b7280',
+                font: {
+                  size: 12
+                }
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                color: '#6b7280',
+                font: {
+                  size: 12
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Inventory Status Donut Chart
+      const inventoryCtx = document.getElementById('inventoryChart').getContext('2d');
+      inventoryChart = new Chart(inventoryCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['In Stock', 'Low Stock', 'Out of Stock'],
+          datasets: [{
+            data: [200, 75, 50],
+            backgroundColor: [
+              '#10b981',
+              '#f59e0b',
+              '#ef4444'
+            ],
+            borderWidth: 0,
+            hoverOffset: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#fff',
+              borderWidth: 1,
+              padding: 12,
+              callbacks: {
+                label: function(context) {
+                  return context.label + ': ' + context.parsed + ' items';
+                }
+              }
+            }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      showLoading();
+      
+      try {
+        // Simulate API call - replace with actual API call
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Update summary cards with animation
+        animateNumber('totalUsers', 12345);
+        animateNumber('totalOrders', 8210);
+        animateNumber('totalSales', 2540000, true);
+        animateNumber('inventoryProducts', 325);
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        showError('Failed to load dashboard data');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Update sales chart based on period
+    function updateSalesChart() {
+      const period = document.getElementById('salesPeriod').value;
+      let newData, newLabels;
+      
+      switch (period) {
+        case 'jan-apr':
+          newLabels = ['January', 'February', 'March', 'April'];
+          newData = [1200000, 1500000, 1800000, 2540000];
+          break;
+        case 'may-aug':
+          newLabels = ['May', 'June', 'July', 'August'];
+          newData = [2100000, 2300000, 1900000, 2200000];
+          break;
+        case 'sep-dec':
+          newLabels = ['September', 'October', 'November', 'December'];
+          newData = [2400000, 2600000, 2800000, 3200000];
+          break;
+        case 'year':
+          newLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          newData = [1200000, 1500000, 1800000, 2540000, 2100000, 2300000, 1900000, 2200000, 2400000, 2600000, 2800000, 3200000];
+          break;
+      }
+      
+      salesChart.data.labels = newLabels;
+      salesChart.data.datasets[0].data = newData;
+      salesChart.update();
+    }
+
+    // Refresh inventory data
+    function refreshInventoryData() {
+      showLoading();
+      
+      // Simulate data refresh
+      setTimeout(() => {
+        // Update inventory chart with new random data
+        const newData = [
+          Math.floor(Math.random() * 100) + 150,
+          Math.floor(Math.random() * 50) + 50,
+          Math.floor(Math.random() * 30) + 30
+        ];
+        
+        inventoryChart.data.datasets[0].data = newData;
+        inventoryChart.update();
+        
+        // Update legend
+        updateInventoryLegend(newData);
+        
+        hideLoading();
+        showSuccess('Inventory data refreshed successfully!');
+      }, 1000);
+    }
+
+    // Update inventory legend
+    function updateInventoryLegend(data) {
+      const legendItems = document.querySelectorAll('.legend-item span');
+      legendItems[0].textContent = `In Stock (${data[0]})`;
+      legendItems[1].textContent = `Low Stock (${data[1]})`;
+      legendItems[2].textContent = `Out of Stock (${data[2]})`;
+    }
+
+    // Animate numbers
+    function animateNumber(elementId, targetValue, isCurrency = false) {
+      const element = document.getElementById(elementId);
+      const startValue = 0;
+      const duration = 2000;
+      const startTime = performance.now();
+      
+      function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const currentValue = Math.floor(startValue + (targetValue - startValue) * progress);
+        
+        if (isCurrency) {
+          element.textContent = '₹' + currentValue.toLocaleString('en-IN');
+        } else {
+          element.textContent = currentValue.toLocaleString();
+        }
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateNumber);
+        }
+      }
+      
+      requestAnimationFrame(updateNumber);
+    }
+
+    // Loading functions
+    function showLoading() {
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // Notification functions
+    function showSuccess(message) {
+      showNotification(message, 'success');
+    }
+
+    function showError(message) {
+      showNotification(message, 'error');
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        ${type === 'success' ? 'background: #10b981;' : 'background: #ef4444;'}
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }, 3000);
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      localStorage.removeItem('rememberAdmin');
+      window.location.href = 'admin-login.html';
+    }
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes slideOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

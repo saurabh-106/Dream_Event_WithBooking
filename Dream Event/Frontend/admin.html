@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard | Dream Event</title>
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div class="admin-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo" style="cursor: pointer;" onclick="window.location.href='index.html'">
+          Dream <span>Event</span>
+        </div>
+        <div class="admin-badge">
+          <i class="fas fa-shield-alt"></i>
+          <span>Admin</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item active" data-tab="dashboard">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </li>
+          <li class="nav-item" data-tab="bookings">
+            <i class="fas fa-calendar-check"></i>
+            <span>Bookings</span>
+          </li>
+          <li class="nav-item" data-tab="users">
+            <i class="fas fa-users"></i>
+            <span>Users</span>
+          </li>
+          <li class="nav-item" data-tab="feedback">
+            <i class="fas fa-comments"></i>
+            <span>Feedback</span>
+          </li>
+          <li class="nav-item" data-tab="analytics">
+            <i class="fas fa-chart-bar"></i>
+            <span>Analytics</span>
+          </li>
+          <li class="nav-item" data-tab="reports">
+            <i class="fas fa-file-pdf"></i>
+            <span>Reports</span>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="back-to-site">
+          <i class="fas fa-arrow-left"></i>
+          <span>Back to Site</span>
+        </a>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- HEADER -->
+      <header class="content-header">
+        <div class="header-left">
+          <h1 id="pageTitle">Dashboard</h1>
+          <p id="pageSubtitle">Manage your Dream Event platform</p>
+        </div>
+        <div class="header-right">
+          <div class="admin-info">
+            <span id="adminName">Admin User</span>
+            <div class="admin-avatar">
+              <i class="fas fa-user-shield"></i>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- DASHBOARD TAB -->
+      <div class="tab-content active" id="dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="totalBookings">0</h3>
+              <p>Total Bookings</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="totalUsers">0</h3>
+              <p>Total Users</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-star"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="totalFeedback">0</h3>
+              <p>Total Feedback</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="revenue">$0</h3>
+              <p>Estimated Revenue</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="dashboard-card">
+            <h3>Recent Bookings</h3>
+            <div class="recent-bookings" id="recentBookings">
+              <div class="loading">Loading...</div>
+            </div>
+          </div>
+          <div class="dashboard-card">
+            <h3>Recent Feedback</h3>
+            <div class="recent-feedback" id="recentFeedback">
+              <div class="loading">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOKINGS TAB -->
+      <div class="tab-content" id="bookings">
+        <div class="content-actions">
+          <button class="btn btn-primary" onclick="refreshBookings()">
+            <i class="fas fa-sync"></i> Refresh
+          </button>
+          <div class="search-box">
+            <input type="text" id="bookingSearch" placeholder="Search bookings...">
+            <i class="fas fa-search"></i>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="bookingsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Event Type</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+              <tr><td colspan="7" class="loading">Loading bookings...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS TAB -->
+      <div class="tab-content" id="users">
+        <div class="content-actions">
+          <button class="btn btn-primary" onclick="refreshUsers()">
+            <i class="fas fa-sync"></i> Refresh
+          </button>
+          <div class="search-box">
+            <input type="text" id="userSearch" placeholder="Search users...">
+            <i class="fas fa-search"></i>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="6" class="loading">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FEEDBACK TAB -->
+      <div class="tab-content" id="feedback">
+        <div class="content-actions">
+          <button class="btn btn-primary" onclick="refreshFeedback()">
+            <i class="fas fa-sync"></i> Refresh
+          </button>
+          <div class="search-box">
+            <input type="text" id="feedbackSearch" placeholder="Search feedback...">
+            <i class="fas fa-search"></i>
+          </div>
+        </div>
+        <div class="feedback-grid" id="feedbackGrid">
+          <div class="loading">Loading feedback...</div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS TAB -->
+      <div class="tab-content" id="analytics">
+        <div class="analytics-grid">
+          <div class="analytics-card">
+            <h3>Booking Trends</h3>
+            <div class="chart-placeholder">
+              <i class="fas fa-chart-line"></i>
+              <p>Booking trends chart will appear here</p>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <h3>Event Types Distribution</h3>
+            <div class="chart-placeholder">
+              <i class="fas fa-chart-pie"></i>
+              <p>Event distribution chart will appear here</p>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <h3>Monthly Revenue</h3>
+            <div class="chart-placeholder">
+              <i class="fas fa-chart-bar"></i>
+              <p>Revenue chart will appear here</p>
+            </div>
+          </div>
+          <div class="analytics-card">
+            <h3>User Growth</h3>
+            <div class="chart-placeholder">
+              <i class="fas fa-chart-area"></i>
+              <p>User growth chart will appear here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS TAB -->
+      <div class="tab-content" id="reports">
+        <div class="reports-header">
+          <div class="report-filters">
+            <div class="filter-group">
+              <label for="reportType">Report Type:</label>
+              <select id="reportType" class="form-control">
+                <option value="bookings">Bookings Report</option>
+                <option value="users">Users Report</option>
+                <option value="revenue">Revenue Report</option>
+                <option value="feedback">Feedback Report</option>
+                <option value="events">Events Summary</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="dateRange">Date Range:</label>
+              <select id="dateRange" class="form-control">
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div class="filter-group" id="customDateRange" style="display: none;">
+              <label for="startDate">From:</label>
+              <input type="date" id="startDate" class="form-control">
+              <label for="endDate">To:</label>
+              <input type="date" id="endDate" class="form-control">
+            </div>
+            <div class="filter-group">
+              <label for="format">Format:</label>
+              <select id="format" class="form-control">
+                <option value="pdf">PDF</option>
+                <option value="excel">Excel (CSV)</option>
+              </select>
+            </div>
+          </div>
+          <div class="report-actions">
+            <button class="btn btn-primary" onclick="generateReport()">
+              <i class="fas fa-file-pdf"></i> Generate Report
+            </button>
+            <button class="btn btn-secondary" onclick="previewReport()">
+              <i class="fas fa-eye"></i> Preview
+            </button>
+          </div>
+        </div>
+
+        <div class="report-preview" id="reportPreview" style="display: none;">
+          <h3>Report Preview</h3>
+          <div class="preview-content" id="previewContent">
+            <!-- Preview content will be loaded here -->
+          </div>
+        </div>
+
+        <div class="reports-stats">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="totalReports">0</h3>
+                <p>Total Reports Generated</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-download"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="totalDownloads">0</h3>
+                <p>Total Downloads</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-calendar"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="lastReport">Never</h3>
+                <p>Last Report Generated</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="avgTime">0s</h3>
+                <p>Avg. Generation Time</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-reports">
+          <h3>Recent Reports</h3>
+          <div class="reports-table">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Report Type</th>
+                  <th>Date Range</th>
+                  <th>Generated</th>
+                  <th>Format</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reportsTableBody">
+                <tr>
+                  <td colspan="6" class="loading">No reports generated yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal" id="confirmModal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Confirm Action</h3>
+      <p id="modalMessage">Are you sure you want to proceed?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
